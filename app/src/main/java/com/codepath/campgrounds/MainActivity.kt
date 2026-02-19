@@ -9,9 +9,11 @@ import androidx.recyclerview.widget.RecyclerView
 import com.codepath.campgrounds.databinding.ActivityMainBinding
 import com.codepath.asynchttpclient.AsyncHttpClient
 import com.codepath.asynchttpclient.callback.JsonHttpResponseHandler
+import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.json.Json
 import okhttp3.Headers
 import org.json.JSONException
+
 
 fun createJson() = Json {
     isLenient = true
@@ -29,6 +31,8 @@ class MainActivity : AppCompatActivity() {
     private lateinit var binding: ActivityMainBinding
 
     // TODO: Create campgrounds list
+    private val campgrounds = mutableListOf<Campground>()
+    private lateinit var campgroundAdapter: CampgroundAdapter
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -40,6 +44,8 @@ class MainActivity : AppCompatActivity() {
         campgroundsRecyclerView = findViewById(R.id.campgrounds)
 
         // TODO: Set up CampgroundAdapter with campgrounds
+        campgroundAdapter = CampgroundAdapter(this, campgrounds)
+        campgroundsRecyclerView.adapter = campgroundAdapter
 
 
         campgroundsRecyclerView.layoutManager = LinearLayoutManager(this).also {
@@ -62,10 +68,18 @@ class MainActivity : AppCompatActivity() {
                 Log.i(TAG, "Successfully fetched campgrounds: $json")
                 try {
                     // TODO: Create the parsedJSON
+                    val parsedJson = createJson().decodeFromString(
+                        CampgroundResponse.serializer(),
+                        json.jsonObject.toString()
+                    )
 
                     // TODO: Do something with the returned json (contains campground information)
-
                     // TODO: Save the campgrounds and reload the screen
+                    parsedJson.data?.let { list ->
+                        campgrounds.clear()
+                        campgrounds.addAll(list)
+                        campgroundAdapter.notifyDataSetChanged()
+                    }
 
                 } catch (e: JSONException) {
                     Log.e(TAG, "Exception: $e")
